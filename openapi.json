@@ -1,0 +1,654 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Tsukyio API",
+    "version": "1.0.0",
+    "description": "Official developer API for the Tsukyio Creator Ecosystem. Provides access to Cloud Storage Vault, AI audio splitters, converters, and high-speed media processors.",
+    "contact": {
+      "name": "Tsukyio Developer Support",
+      "url": "https://tsukyio.com",
+      "email": "contact@tsukyio.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://tsukyio.com",
+      "description": "Production API Server"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Tsukyio API Key (e.g. Bearer tsk_live_...)"
+      }
+    },
+    "schemas": {
+      "VaultAsset": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique asset identifier",
+            "example": "cm123456789"
+          },
+          "name": {
+            "type": "string",
+            "description": "File or folder name",
+            "example": "gojo_domain_expansion.mp4"
+          },
+          "path": {
+            "type": "string",
+            "description": "Full virtual path in storage",
+            "example": "Raw/Jujutsu Kaisen/gojo_domain_expansion.mp4"
+          },
+          "relPath": {
+            "type": "string",
+            "description": "Relative category path",
+            "example": "Jujutsu Kaisen/gojo_domain_expansion.mp4"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "file",
+              "folder",
+              "video",
+              "audio",
+              "image",
+              "preset",
+              "archive"
+            ],
+            "description": "Resource type identifier",
+            "example": "video"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category slug",
+            "example": "raw"
+          },
+          "size": {
+            "type": "number",
+            "description": "File size in bytes",
+            "example": 104857600
+          },
+          "thumbnail": {
+            "type": "string",
+            "nullable": true,
+            "description": "Resolved absolute thumbnail URL",
+            "example": "https://tsukyio.com/api/vault/thumbnails/cm123456789.webp"
+          },
+          "downloadUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Direct temporary signed download URL (omitted or null if locked)",
+            "example": "/api/vault/download/cm123456789?expires=1710000000&signature=abc"
+          },
+          "mtime": {
+            "type": "string",
+            "description": "Last modified ISO timestamp",
+            "example": "2026-10-14T07:30:00.000Z"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation ISO timestamp",
+            "example": "2026-10-14T07:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last update ISO timestamp",
+            "example": "2026-10-14T07:30:00.000Z"
+          },
+          "isEarlyAccess": {
+            "type": "boolean",
+            "description": "Whether this asset is currently in the 7-day Patreon early access window",
+            "example": true
+          },
+          "isLockedEarlyAccess": {
+            "type": "boolean",
+            "description": "Whether this asset is locked for the requesting user/key due to lacking Supporter privilege",
+            "example": false
+          },
+          "earlyAccessRemaining": {
+            "type": "string",
+            "nullable": true,
+            "description": "Human-readable time remaining until public access",
+            "example": "6d 14h"
+          },
+          "earlyAccessUnlockAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "ISO timestamp when the asset unlocks for public access",
+            "example": "2026-10-21T07:30:00.000Z"
+          },
+          "has4k": {
+            "type": "boolean",
+            "description": "Indicates whether a paired 4K master companion exists for this 1080p proxy",
+            "example": true
+          },
+          "master4kPath": {
+            "type": "string",
+            "nullable": true,
+            "description": "Internal storage path to the 4K master asset",
+            "example": "Raw/Jujutsu Kaisen/gojo_domain_expansion_4k.mp4"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "path",
+          "relPath",
+          "type",
+          "category",
+          "size",
+          "thumbnail",
+          "mtime",
+          "createdAt",
+          "updatedAt",
+          "isEarlyAccess",
+          "isLockedEarlyAccess",
+          "earlyAccessRemaining",
+          "earlyAccessUnlockAt"
+        ]
+      },
+      "VaultListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VaultAsset"
+            }
+          },
+          "currentPath": {
+            "type": "string"
+          },
+          "breadcrumbs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "path"
+              ]
+            }
+          },
+          "stats": {
+            "type": "object",
+            "additionalProperties": {
+              "nullable": true
+            }
+          },
+          "totalCount": {
+            "type": "number"
+          },
+          "folderCount": {
+            "type": "number"
+          },
+          "fileCount": {
+            "type": "number"
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "number"
+              },
+              "limit": {
+                "type": "number"
+              },
+              "total": {
+                "type": "number"
+              },
+              "totalPages": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "page",
+              "limit",
+              "total",
+              "totalPages"
+            ]
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "VaultDownloadToken": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Signed access token string",
+            "example": "tok_secure_123"
+          },
+          "url": {
+            "type": "string",
+            "description": "Direct download endpoint URL with signature",
+            "example": "https://tsukyio.com/api/vault/download/cm123?expires=17100000&signature=abc"
+          },
+          "expires": {
+            "type": "number",
+            "description": "UNIX expiration timestamp",
+            "example": 1710086400
+          },
+          "signature": {
+            "type": "string",
+            "description": "HMAC security signature",
+            "example": "a1b2c3d4..."
+          }
+        },
+        "required": [
+          "token",
+          "url",
+          "expires",
+          "signature"
+        ]
+      },
+      "VaultCategory": {
+        "type": "string",
+        "enum": [
+          "precuts",
+          "raw",
+          "flow",
+          "presets",
+          "vocals",
+          "overlays",
+          "sfx",
+          "remake_clips",
+          "green_screen",
+          "credits",
+          "edit_audios"
+        ],
+        "description": "Official Vault asset categories",
+        "example": "raw"
+      },
+      "ToolkitTask": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique task processing ID",
+            "example": "task_abc123"
+          },
+          "toolId": {
+            "type": "string",
+            "description": "Identifier of the tool (e.g. youtube-video, soundcloud, ai-splitter)",
+            "example": "youtube-video"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "processing",
+              "completed",
+              "failed"
+            ],
+            "description": "Live processing state"
+          },
+          "progress": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Percentage completion",
+            "example": 85
+          },
+          "step": {
+            "type": "string",
+            "description": "Current execution sub-step",
+            "example": "Transcoding 320kbps MP3 via FFmpeg..."
+          },
+          "outputUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Direct result download URL when completed",
+            "example": "/api/toolkit/download/task_abc123"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Human-readable failure reason if status is failed"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "toolId",
+          "status",
+          "progress",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ToolkitJobRequest": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Target source media URL to process",
+            "example": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "mp3",
+              "mp4",
+              "wav",
+              "flac"
+            ],
+            "default": "mp4",
+            "description": "Output container format"
+          },
+          "quality": {
+            "type": "string",
+            "enum": [
+              "360p",
+              "720p",
+              "1080p",
+              "1440p",
+              "2160p",
+              "128k",
+              "192k",
+              "256k",
+              "320k"
+            ],
+            "default": "1080p",
+            "description": "Target quality or bitrate"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/api/vault/list": {
+      "get": {
+        "summary": "List Vault Resources",
+        "description": "Browse files and folders with category filtering and 7-day Patreon early access metadata.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "precuts",
+                "raw",
+                "flow",
+                "presets",
+                "vocals",
+                "overlays",
+                "sfx",
+                "remake_clips",
+                "green_screen",
+                "credits",
+                "edit_audios"
+              ],
+              "description": "Official Vault asset categories",
+              "example": "raw"
+            },
+            "required": false,
+            "description": "Official Vault asset categories",
+            "name": "category",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Relative subfolder path (e.g. 'Jujutsu Kaisen/Season 2')"
+            },
+            "required": false,
+            "description": "Relative subfolder path (e.g. 'Jujutsu Kaisen/Season 2')",
+            "name": "path",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Search query for assets by name"
+            },
+            "required": false,
+            "description": "Search query for assets by name",
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "nullable": true,
+              "description": "Items per page limit (default 100)"
+            },
+            "required": false,
+            "description": "Items per page limit (default 100)",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "number",
+              "nullable": true,
+              "description": "Page index (1-based)"
+            },
+            "required": false,
+            "description": "Page index (1-based)",
+            "name": "page",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful directory listing with asset metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultListResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
+      }
+    },
+    "/api/vault/all": {
+      "get": {
+        "summary": "Get All Vault Assets",
+        "description": "Fetch a flat listing of all active resources in the Tsukyio Vault catalog.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "precuts",
+                "raw",
+                "flow",
+                "presets",
+                "vocals",
+                "overlays",
+                "sfx",
+                "remake_clips",
+                "green_screen",
+                "credits",
+                "edit_audios"
+              ],
+              "description": "Official Vault asset categories",
+              "example": "raw"
+            },
+            "required": false,
+            "description": "Official Vault asset categories",
+            "name": "category",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Complete list of vault assets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "number"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/VaultAsset"
+                      }
+                    }
+                  },
+                  "required": [
+                    "total",
+                    "items"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vault/download/sign": {
+      "post": {
+        "summary": "Generate Signed Download Token",
+        "description": "Create an authenticated, time-limited token to download or stream high-bitrate media files directly from Cloudflare R2 / local engine.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "assetId": {
+                    "type": "string",
+                    "description": "Target asset ID"
+                  },
+                  "expiresIn": {
+                    "type": "number",
+                    "default": 86400,
+                    "description": "Token lifetime in seconds (default 24h)"
+                  }
+                },
+                "required": [
+                  "assetId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Signed download token and direct download URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultDownloadToken"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/toolkit/dispatch": {
+      "post": {
+        "summary": "Dispatch Creator Tool Task",
+        "description": "Queue an asynchronous processing task (YouTube/SoundCloud/Spotify/TikTok download or AI Stem Splitter).",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToolkitJobRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task queued successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolkitTask"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/toolkit/status/{taskId}": {
+      "get": {
+        "summary": "Get Toolkit Task Status",
+        "description": "Poll the live progress and status of a running toolkit task.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "ID of the dispatched task"
+            },
+            "required": true,
+            "description": "ID of the dispatched task",
+            "name": "taskId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current task status and progress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolkitTask"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -39,6 +39,22 @@ describe("Tsukyio SDK Client", () => {
     expect(client).toBeInstanceOf(TsukyioClient);
   });
 
+  it("should sanitize and normalize subpath URLs to origin", async () => {
+    const dirtyClient = createTsukyioClient({
+      apiKey: "tsk_test",
+      baseUrl: "https://tsukyio.com/en/file-manager/",
+    });
+
+    let requestedUrl = "";
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      requestedUrl = String(url);
+      return Promise.resolve(new Response(JSON.stringify({ success: true, data: { items: [] } }), { status: 200 }));
+    });
+
+    await dirtyClient.vault.search("naruto");
+    expect(requestedUrl).toBe("https://tsukyio.com/api/vault/search?q=naruto");
+  });
+
   it("should attach Authorization & X-API-Key headers correctly", async () => {
     let capturedHeaders: HeadersInit | undefined;
 

@@ -23,6 +23,7 @@
     "LICENSE"
   ],
   "scripts": {
+    "codegen": "openapi-typescript ./openapi.json -o ./src/types/generated.ts",
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",

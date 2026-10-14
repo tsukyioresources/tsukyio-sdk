@@ -1,48 +1,9 @@
-export type VaultCategory =
-  | "raw"
-  | "precuts"
-  | "flow"
-  | "presets"
-  | "vocals"
-  | "overlays"
-  | "sfx"
-  | "remake_clips"
-  | "green_screen"
-  | "credits"
-  | "edit_audios";
+import type { components } from "./generated.js";
 
-export interface VaultAsset {
-  id: string;
-  name: string;
-  path: string;
-  relPath: string;
-  type: "file" | "folder" | "video" | "audio" | "image" | "preset" | "archive";
-  category: string;
-  size: number;
-  thumbnail: string | null;
-  downloadUrl?: string | null;
-  mtime: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface VaultListResponse {
-  items: VaultAsset[];
-  stats?: Record<string, unknown>;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-export interface SignedDownloadToken {
-  token: string;
-  url: string;
-  expires: number;
-  signature: string;
-}
+export type VaultCategory = components["schemas"]["VaultCategory"];
+export type VaultAsset = components["schemas"]["VaultAsset"];
+export type VaultListResponse = components["schemas"]["VaultListResponse"];
+export type SignedDownloadToken = components["schemas"]["VaultDownloadToken"];
 
 export interface VaultListOptions {
   category?: VaultCategory | string;

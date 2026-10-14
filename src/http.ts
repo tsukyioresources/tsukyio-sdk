@@ -13,7 +13,17 @@ export class HttpClient {
   private maxRetries: number;
 
   constructor(options: ClientOptions = {}) {
-    this.baseUrl = (options.baseUrl || "https://tsukyio.com").replace(/\/+$/, "");
+    let cleanBaseUrl = (options.baseUrl || "https://tsukyio.com").trim();
+    try {
+      if (!cleanBaseUrl.startsWith("http://") && !cleanBaseUrl.startsWith("https://")) {
+        cleanBaseUrl = "https://" + cleanBaseUrl;
+      }
+      const parsed = new URL(cleanBaseUrl);
+      cleanBaseUrl = parsed.origin;
+    } catch {
+      cleanBaseUrl = cleanBaseUrl.replace(/\/+$/, "");
+    }
+    this.baseUrl = cleanBaseUrl;
     this.apiKey = options.apiKey;
     this.timeoutMs = options.timeoutMs ?? 30000;
     this.maxRetries = options.maxRetries ?? 3;
